@@ -1,0 +1,6 @@
+flask
+python-dotenv
+opencv-python
+Pillow
+azure-functions
+azure-storage-blob

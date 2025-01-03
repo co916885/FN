@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>照上雲端</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+        .workspace {
+            display: flex;
+            flex: 1;
+            flex-direction: row;
+        }
+        .sidebar {
+            width: 20%;
+            background-color: #f4f4f4;
+            padding: 10px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+        .content {
+            flex: 1;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+        video {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+        }
+        canvas {
+            display: none;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .success {
+            color: green;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>照上雲端</h1>
+    </header>
+    <div class="workspace">
+        <div class="sidebar">
+            <button id="captureButton">拍照</button>
+            <button id="uploadButton" disabled>上傳照片</button>
+            <button id="resetButton" style="display:none;">返回</button>
+        </div>
+        <div class="content">
+            <video id="video" autoplay></video>
+            <canvas id="canvas"></canvas>
+            <img id="photo" alt="">
+            <p id="statusMessage"></p>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const photo = document.getElementById('photo');
+        const captureButton = document.getElementById('captureButton');
+        const uploadButton = document.getElementById('uploadButton');
+        const resetButton = document.getElementById('resetButton');
+        const statusMessage = document.getElementById('statusMessage');
+
+        let stream;
+
+        // 開啟攝像頭
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(cameraStream => {
+                stream = cameraStream;
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error("無法存取攝像頭", err);
+                statusMessage.textContent = "無法存取攝像頭: " + err.message;
+            });
+
+        // 拍照功能
+        captureButton.addEventListener('click', () => {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = canvas.toDataURL('image/jpeg');
+            photo.src = imageData;
+            video.style.display = 'none';  // 隱藏攝像頭畫面
+            photo.style.display = 'block'; // 顯示照片
+            uploadButton.disabled = false;
+            resetButton.style.display = 'block'; // 顯示返回按鈕
+            statusMessage.textContent = ''; // 清空狀態訊息
+        });
+
+        // 上傳照片功能
+        uploadButton.addEventListener('click', () => {
+            const formData = new FormData();
+            canvas.toBlob(blob => {
+                formData.append('file', blob, 'photo.jpg');
+
+                fetch('/', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())  // 改為返回文本，而不是 JSON
+                .then(text => {
+                    statusMessage.textContent = "上傳成功！";
+                    statusMessage.style.color = "green";
+                })
+                .catch(err => {
+                    console.error("上傳失敗", err);
+                    statusMessage.textContent = "上傳失敗: " + err.message;
+                    statusMessage.style.color = "red";
+                });
+            }, 'image/jpeg');
+        });
+
+        // 返回攝像頭畫面
+        resetButton.addEventListener('click', () => {
+            photo.style.display = 'none';
+            video.style.display = 'block';
+            uploadButton.disabled = true;
+            resetButton.style.display = 'none'; // 隱藏返回按鈕
+            statusMessage.textContent = ''; // 清空狀態訊息
+        });
+    </script>
+</body>
+</html>
