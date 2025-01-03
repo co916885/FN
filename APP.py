@@ -5,7 +5,7 @@ import pathlib
 from dotenv import load_dotenv
 from azure.storage.blob import BlobServiceClient
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=os.getcwd())
 
 # 加載環境變量
 env_path = pathlib.Path(".env")
