@@ -96,16 +96,26 @@
 
         let stream;
 
-        // 開啟攝像頭
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(cameraStream => {
-                stream = cameraStream;
-                video.srcObject = stream;
-            })
-            .catch(err => {
-                console.error("無法存取攝像頭", err);
-                statusMessage.textContent = "無法存取攝像頭: " + err.message;
-            });
+        // 開啟攝像頭，並詢問使用者是否允許
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(cameraStream => {
+                    stream = cameraStream;
+                    video.srcObject = stream;
+                })
+                .catch(err => {
+                    console.error("無法存取攝像頭", err);
+                    statusMessage.textContent = "無法存取攝像頭: " + err.message;
+                    statusMessage.style.color = "red";
+                    // 如果用戶拒絕授權，給予提示
+                    if (err.name === "NotAllowedError") {
+                        statusMessage.textContent = "您已拒絕攝像頭存取，請允許攝像頭訪問。";
+                    }
+                });
+        } else {
+            statusMessage.textContent = "您的瀏覽器不支援攝像頭功能。";
+            statusMessage.style.color = "red";
+        }
 
         // 拍照功能
         captureButton.addEventListener('click', () => {
